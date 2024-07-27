@@ -1,15 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.AuthorDto;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
+import com.example.demo.service.AuthorService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +10,28 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import lombok.extern.slf4j.Slf4j;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @Tag(name = "Author Collection")
 @Slf4j
 @RestController
 @RequestMapping("/api/authors")
 public class AuthorController {
+
+    private final AuthorService authorService;
+
+    public AuthorController(AuthorService authorService) {
+        this.authorService = authorService;
+    }
 
     @GetMapping("/{author-id}")
     @Operation(summary = "Get author by ID", description = "Retrieves an author by their ID")
@@ -68,6 +77,9 @@ public class AuthorController {
 
     })
     public ResponseEntity<AuthorDto> getAuthorById(@PathVariable(name = "author-id") Long authorId) {
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        log.info("Entering getAuthorById()");
+        AuthorDto authorDto = authorService.findAuthorById(authorId);
+        log.info("Leaving getAuthorById()");
+        return new ResponseEntity<>(authorDto, HttpStatus.OK);
     }
 }

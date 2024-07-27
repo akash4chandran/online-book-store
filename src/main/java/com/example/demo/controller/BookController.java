@@ -1,16 +1,11 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.BookDto;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.enums.ParameterStyle;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
+import com.example.demo.service.BookService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.SortDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,11 +21,29 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import lombok.extern.slf4j.Slf4j;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.enums.ParameterStyle;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @Tag(name = "Book Collection")
 @RestController
 @RequestMapping("/api/books")
 @Slf4j
 public class BookController {
+
+    private final BookService bookService;
+
+    public BookController(BookService bookService) {
+        this.bookService = bookService;
+    }
 
     @PostMapping
     @Operation(summary = "Add a new book", description = "Adds a new book to the store")
@@ -85,7 +98,10 @@ public class BookController {
                         }
                         """))) })
     public ResponseEntity<BookDto> addBook(@Validated @RequestBody BookDto bookDto) {
-        return new ResponseEntity<>(null, HttpStatus.CREATED);
+        log.info("Entering addBook()");
+        BookDto savedBook = bookService.addNewBook(bookDto);
+        log.info("Leaving addBook()");
+        return new ResponseEntity<>(savedBook, HttpStatus.CREATED);
     }
 
     @GetMapping("/{isbn}")
@@ -133,7 +149,10 @@ public class BookController {
                         }
                         """))) })
     public ResponseEntity<BookDto> getBookByIsbn(@PathVariable String isbn) {
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        log.info("Entering getBookByIsbn()");
+        BookDto bookDto = bookService.fetchBookByIsbn(isbn);
+        log.info("Leaving getBookByIsbn()");
+        return new ResponseEntity<>(bookDto, HttpStatus.OK);
     }
 
     @GetMapping
@@ -204,8 +223,14 @@ public class BookController {
                             ]
                         }
                         """))) })
-    public ResponseEntity<Object> retrieveBooks() {
-        return new ResponseEntity<>(null, HttpStatus.OK);
+    public ResponseEntity<Page<BookDto>> retrieveBooks(
+            @Parameter(hidden = true, in = ParameterIn.QUERY, style = ParameterStyle.FORM)
+            @SortDefault(sort = "title", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) MultiValueMap<String, String> searchParameters) {
+        log.info("Entering retrieveBooks()");
+        Page<BookDto> bookDtos = bookService.getAllBooks(searchParameters, pageable);
+        log.info("Leaving retrieveBooks()");
+        return new ResponseEntity<>(bookDtos, HttpStatus.OK);
     }
 
     @PutMapping("/{isbn}")
@@ -262,7 +287,10 @@ public class BookController {
                         }
                         """))) })
     public ResponseEntity<BookDto> updateBook(@PathVariable String isbn, @Validated @RequestBody BookDto bookDto) {
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        log.info("Entering updateBook()");
+        BookDto updatedBook = bookService.modifyBookByIsbn(isbn, bookDto);
+        log.info("Leaving updateBook()");
+        return new ResponseEntity<>(updatedBook, HttpStatus.OK);
     }
 
     @DeleteMapping("/{isbn}")
@@ -302,6 +330,8 @@ public class BookController {
                                 }
                                 """))) })
     public ResponseEntity<Void> deleteBook(@PathVariable String isbn) {
+        log.info("Entering removeBookByIsbn()");
+        bookService.removeBookByIsbn(isbn);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 

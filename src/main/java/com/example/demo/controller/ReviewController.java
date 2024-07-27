@@ -1,15 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ReviewDto;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.extern.slf4j.Slf4j;
+import com.example.demo.service.ReviewService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +14,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import lombok.extern.slf4j.Slf4j;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.List;
 
 @Tag(name = "Review Collection")
@@ -29,6 +32,12 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/reviews")
 public class ReviewController {
+
+    private final ReviewService reviewService;
+
+    public ReviewController(ReviewService reviewService) {
+        this.reviewService = reviewService;
+    }
 
     @PostMapping(path = "/{isbn}")
     @Operation(summary = "Submit a review", description = "Submits a review for a specific book using its ISBN")
@@ -84,7 +93,10 @@ public class ReviewController {
                         }
                         """))) })
     public ResponseEntity<ReviewDto> submitReview(@PathVariable String isbn, @RequestBody ReviewDto reviewDto) {
-        return new ResponseEntity<>(null, HttpStatus.CREATED);
+        log.info("Entering submitReview()");
+        ReviewDto savedReview = reviewService.submitReview(isbn, reviewDto);
+        log.info("Leaving submitReview()");
+        return new ResponseEntity<>(savedReview, HttpStatus.CREATED);
     }
 
     @GetMapping(path = "/{isbn}")
@@ -141,7 +153,10 @@ public class ReviewController {
                         }
                         """))) })
     public ResponseEntity<List<ReviewDto>> getReviewsByIsbn(@PathVariable String isbn) {
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        log.info("Entering getReviewsByIsbn()");
+        List<ReviewDto> reviews = reviewService.fetchReviewsByIsbn(isbn);
+        log.info("Leaving getReviewsByIsbn()");
+        return new ResponseEntity<>(reviews, HttpStatus.OK);
     }
 
     @PutMapping(path = "/{isbn}/{review-id}")
@@ -187,7 +202,7 @@ public class ReviewController {
                             "statusCode": 404,
                             "message": "NOT_FOUND",
                             "details": [
-                                "Review not found for ID: 1"
+                                "Review not found for ID: 1",
                             ]
                         }
                         """))),
@@ -213,6 +228,9 @@ public class ReviewController {
                         """))) })
     public ResponseEntity<ReviewDto> updateReview(@PathVariable String isbn,
             @PathVariable(name = "review-id") long reviewId, @Validated @RequestBody ReviewDto reviewDto) {
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        log.info("Entering updateReview()");
+        ReviewDto updatedReview = reviewService.modifyReview(isbn, reviewId, reviewDto);
+        log.info("Leaving updateReview()");
+        return new ResponseEntity<>(updatedReview, HttpStatus.OK);
     }
 }
